@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Art Space</string>
+
+    <!-- Artwork Titles -->
+    <string name="starry_night_title">The Starry Night</string>
+    <string name="sunflowers_title">Sunflowers</string>
+    <string name="cafe_terrace_title">Café Terrace at Night</string>
+
+    <!-- Artwork Details -->
+    <string name="starry_night_details">Vincent van Gogh (1889)</string>
+    <string name="sunflowers_details">Vincent van Gogh (1888)</string>
+    <string name="cafe_terrace_details">Vincent van Gogh (1888)</string>
+
+    <!-- Button Texts -->
+    <string name="previous_button">Previous</string>
+    <string name="next_button">Next</string>
+</resources>
