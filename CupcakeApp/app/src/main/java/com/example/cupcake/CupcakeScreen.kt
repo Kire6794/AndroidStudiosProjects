@@ -15,7 +15,10 @@
  */
 package com.example.cupcake
 
+import android.content.Context
+import android.content.Intent
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -30,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -43,7 +47,7 @@ import com.example.cupcake.ui.OrderViewModel
 import com.example.cupcake.ui.SelectOptionScreen
 import com.example.cupcake.ui.StartOrderScreen
 
-enum class CupcakeScreen(@StringRes val title: Int ){
+enum class CupcakeScreen(@StringRes val title: Int){
     Start(title = R.string.app_name),
     Flavor(title = R.string.choose_flavor),
     Pickup(title = R.string.choose_pickup_date),
@@ -59,7 +63,6 @@ fun CupcakeAppBar(
     navigateUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     TopAppBar(
         title = { Text(stringResource(id = currentScreen.title)) },
         colors = TopAppBarDefaults.mediumTopAppBarColors(
@@ -91,6 +94,7 @@ fun CupcakeApp(
     Scaffold(
         topBar = {
             CupcakeAppBar(
+                currentScreen=currentScreen,
                 canNavigateBack = navController.previousBackStackEntry!=null,
                 navigateUp = { navController.navigateUp() }
             )
@@ -109,7 +113,7 @@ fun CupcakeApp(
                         viewModel.setQuantity(it)
                         navController.navigate(CupcakeScreen.Flavor.name)
                     },
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxHeight()
                 )
             }
             composable(route = CupcakeScreen.Flavor.name){
@@ -118,11 +122,10 @@ fun CupcakeApp(
                     options = DataSource.flavors.map{ stringResource(it)},
                     onNextButtonClicked = {navController.navigate(CupcakeScreen.Pickup.name)},
                     onCancelButtonClicked = {
-                        viewModel.resetOrder()
-                        navController.navigate(CupcakeScreen.Start.name)
+                        cancelOrderAndNavigateToStart(viewModel,navController)
                     },
                     onSelectionChanged = {viewModel.setFlavor(it)},
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxHeight()
                 )
             }
             composable(route = CupcakeScreen.Pickup.name){
@@ -131,23 +134,47 @@ fun CupcakeApp(
                     options = uiState.pickupOptions,
                     onNextButtonClicked = {navController.navigate(CupcakeScreen.Summary.name)},
                     onCancelButtonClicked = {
-                        viewModel.resetOrder()
-                        navController.navigate(CupcakeScreen.Start.name)
+                        cancelOrderAndNavigateToStart(viewModel,navController)
                     },
                     onSelectionChanged = {viewModel.setDate(it)},
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxHeight()
                 )
             }
             composable(route = CupcakeScreen.Summary.name){
+                val context = LocalContext.current
                 OrderSummaryScreen(
                     orderUiState = uiState,
                     onCancelButtonClicked = {
-                        viewModel.resetOrder()
-                        navController.navigate(CupcakeScreen.Start.name)
+                        cancelOrderAndNavigateToStart(viewModel,navController)
                     },
-                    modifier = Modifier
+                    onSendButtonClicked = {
+                        subject:String, summary: String->
+                        shareOrder(context, subject,summary)
+                                          },
+                    modifier = Modifier.fillMaxHeight()
                 )
             }
         }
     }
+}
+private fun cancelOrderAndNavigateToStart(
+    viewModel: OrderViewModel,
+    navController:NavHostController
+){
+    viewModel.resetOrder()
+//    navController.navigate(CupcakeScreen.Start.name)
+    navController.popBackStack(CupcakeScreen.Start.name, inclusive = false)
+}
+private fun shareOrder(context: Context, subject: String, summary: String){
+    val intent = Intent(Intent.ACTION_SEND).apply{
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_TEXT, summary)
+    }
+    context.startActivity(
+        Intent.createChooser(
+            intent,
+            context.getString(R.string.new_cupcake_order)
+        )
+    )
 }
